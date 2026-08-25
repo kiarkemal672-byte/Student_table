@@ -1,0 +1,31 @@
+{
+  "id": "./",
+  "name": "የንባብ መዝገብ · سِجْلُ القُرّاء",
+  "short_name": "የንባብ መዝገብ",
+  "description": "የንባብ ተማሪዎችን የመገኘት እና የውጤት መዝገብ — تطبيق لإدارة ومتابعة طلاب القراءات التعليمية — Student Reading Log, fully offline.",
+  "lang": "am",
+  "dir": "ltr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "any",
+  "background_color": "#faf6ec",
+  "theme_color": "#0f4c43",
+  "categories": ["education", "productivity"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
