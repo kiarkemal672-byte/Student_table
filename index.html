@@ -543,8 +543,14 @@
 <div id="toastWrap" class="toast-wrap" aria-live="polite"></div>
 
 <!-- ═══ السكربتات ═══ -->
+<script>
+window.onerror = function(msg, url, line){
+  alert("⚠ خطأ في: " + url + "\nالسطر: " + line + "\n" + msg);
+};
+</script>
 <script src="js/i18n.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/app.js"></script>
+<script>alert("✓ التطبيق اشتغل — جرب الدخول الآن");</script>
 </body>
 </html>
