@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<!-- ============================================================
+     📋 نظام متابعة الطلاب — النسخة الاحترافية الكاملة
+     المزايا: تعدد القراءات + متابعة يومية + درجات + تقارير
+     تليجرام/SMS/Share + صلاحيات + 3 لغات + PWA
+     بيانات الدخول الافتراضية: admin / 1234
+     ============================================================ -->
+<html lang="am" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0e1626">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>የተማሪዎች ክትትል — متابعة الطلاب</title>
+<link rel="manifest" id="manifestLink">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+Ethiopic:wght@400;600;700;900&family=Cairo:wght@400;600;700;900&family=Poppins:wght@400;600;700&display=swap');
+
+/* ================= الأساسيات ================= */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --gold:#d4af37; --gold-2:#f0d68a; --gold-dark:#b8912c;
+  --deep:#0e1626; --deep-2:#152238; --deep-3:#1b2a44;
+  --card:rgba(255,255,255,.055); --card-2:rgba(255,255,255,.09);
+  --border:rgba(212,175,55,.28); --border-soft:rgba(255,255,255,.12);
+  --text:#f5f0e1; --muted:#a8b3c5;
+  --green:#22c55e; --red:#ef4444; --orange:#f59e0b; --blue:#38bdf8;
+}
+html[lang="am"] body{font-family:'Noto Serif Ethiopic',serif}
+html[lang="ar"] body{font-family:'Cairo',sans-serif}
+html[lang="en"] body{font-family:'Poppins',sans-serif}
+body{
+  min-height:100vh;color:var(--text);
+  background:linear-gradient(160deg,#0e1626 0%,#131f33 45%,#1a2438 100%);
+  background-attachment:fixed;
+}
+/* الخلفية الزخرفية الذهبية */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'%3E%3Cg fill='none' stroke='%23d4af37' stroke-width='1'%3E%3Cpath d='M45 5 L55 35 L85 45 L55 55 L45 85 L35 55 L5 45 L35 35 Z'/%3E%3Ccircle cx='45' cy='45' r='12'/%3E%3C/g%3E%3C/svg%3E");
+}
+body::after{
+  content:'';position:fixed;top:-200px;left:50%;transform:translateX(-50%);
+  width:600px;height:600px;border-radius:50%;pointer-events:none;z-index:0;
+  background:radial-gradient(circle,rgba(212,175,55,.14),transparent 70%);
+}
+#appScreen,#loginScreen{position:relative;z-index:1}
+.hidden{display:none!important}
+
+/* ================= مكوّنات عامة ================= */
+.glass{background:var(--card);border:1px solid var(--border-soft);border-radius:18px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.field{width:100%;padding:11px 14px;border-radius:12px;font-size:15px;color:var(--text);
+  background:rgba(255,255,255,.07);border:1px solid var(--border-soft);outline:none;transition:.2s;font-family:inherit}
+.field:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(212,175,55,.15)}
+select.field option{background:#152238;color:var(--text)}
+label.lbl{display:block;margin:12px 0 6px;font-size:13px;color:var(--gold-2);font-weight:600}
+.btn{padding:11px 18px;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;transition:.2s;font-family:inherit;color:var(--text)}
+.btn:active{transform:scale(.97)}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#1a1405;box-shadow:0 4px 15px rgba(212,175,55,.3)}
+.btn-gold:hover{filter:brightness(1.1)}
+.btn-ghost{background:var(--card-2);border:1px solid var(--border-soft)}
+.btn-ghost:hover{border-color:var(--gold)}
+.btn-danger{background:rgba(239,68,68,.15);color:#fca5a5;border:1px solid rgba(239,68,68,.35)}
+.btn-blue{background:linear-gradient(135deg,#38bdf8,#0284c7);color:#05202e}
+.btn-green{background:linear-gradient(135deg,#4ade80,#16a34a);color:#052e14}
+.btn-sm{padding:7px 12px;font-size:12.5px;border-radius:9px}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:99px;font-size:12px;font-weight:700;border:1px solid var(--border-soft);background:rgba(255,255,255,.06)}
+.section-title{font-size:17px;font-weight:900;color:var(--gold-2);margin:26px 0 12px;display:flex;align-items:center;gap:8px}
+.section-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
+
+/* ================= شاشة الدخول ================= */
+#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-card{width:100%;max-width:400px;padding:38px 30px;text-align:center;border-top:3px solid var(--gold)}
+.login-logo{width:86px;height:86px;margin:0 auto 18px;border-radius:26px;display:flex;align-items:center;justify-content:center;font-size:42px;
+  background:linear-gradient(135deg,rgba(212,175,55,.25),rgba(212,175,55,.05));border:1px solid var(--border);box-shadow:0 8px 30px rgba(212,175,55,.2)}
+.login-card h1{font-size:22px;margin-bottom:4px}
+.login-card .sub{color:var(--muted);font-size:13px;margin-bottom:22px}
+.hint{margin-top:16px;font-size:12px;color:var(--muted);background:rgba(255,255,255,.05);padding:9px;border-radius:10px;border:1px dashed var(--border-soft)}
+
+/* ================= الهيدر ================= */
+.topbar{position:sticky;top:0;z-index:50;background:rgba(14,22,38,.85);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+.topbar-in{max-width:1050px;margin:0 auto;padding:12px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.brand{display:flex;align-items:center;gap:10px;font-weight:900;font-size:17px;color:var(--gold-2)}
+.brand .logo{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;
+  background:linear-gradient(135deg,rgba(212,175,55,.3),rgba(212,175,55,.08));border:1px solid var(--border)}
+.topbar-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-inline-start:auto}
+.role-badge{font-size:11.5px;padding:5px 12px;border-radius:99px;font-weight:700}
+.role-teacher{background:rgba(212,175,55,.18);color:var(--gold-2);border:1px solid var(--border)}
+.role-assistant{background:rgba(56,189,248,.15);color:var(--blue);border:1px solid rgba(56,189,248,.35)}
+#langSelect,#readingSelect{max-width:170px}
+
+/* ================= التبويبات ================= */
+.tabs{max-width:1050px;margin:14px auto 0;padding:0 16px;display:flex;gap:8px;flex-wrap:wrap}
+.tab-btn{padding:10px 18px;border-radius:99px;background:var(--card);border:1px solid var(--border-soft);color:var(--muted);font-weight:700;font-size:13.5px;cursor:pointer;transition:.2s;font-family:inherit}
+.tab-btn.active{background:linear-gradient(135deg,var(--gold),var(--gold-dark));color:#1a1405;box-shadow:0 4px 15px rgba(212,175,55,.3)}
+.tab-btn:hover:not(.active){border-color:var(--gold);color:var(--gold-2)}
+
+/* ================= الصفحات ================= */
+.page{max-width:1050px;margin:0 auto;padding:18px 16px 90px}
+.page-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:16px}
+.page-head h2{font-size:19px;color:var(--gold-2)}
+.spacer{flex:1}
+
+/* بطاقة طالب — المتابعة اليومية */
+.stu-card{padding:16px;margin-bottom:12px;border-inline-start:3px solid var(--border-soft);transition:.25s}
+.stu-card.st-p{border-inline-start-color:var(--green)}
+.stu-card.st-a{border-inline-start-color:var(--red)}
+.stu-card.st-l{border-inline-start-color:var(--orange)}
+.stu-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.avatar{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:17px;
+  background:linear-gradient(135deg,rgba(212,175,55,.3),rgba(212,175,55,.08));border:1px solid var(--border);color:var(--gold-2)}
+.stu-name{font-weight:800;font-size:15.5px}
+.stu-sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+.stu-controls{display:flex;flex-wrap:wrap;gap:8px}
+.status-btns{display:flex;gap:6px;flex:1;min-width:220px}
+.st-btn{flex:1;padding:10px 6px;border-radius:11px;border:1px solid var(--border-soft);background:rgba(255,255,255,.05);color:var(--muted);font-weight:700;font-size:12.5px;cursor:pointer;transition:.2s;font-family:inherit}
+.st-btn:hover{border-color:var(--gold)}
+.st-btn.on-p{background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border-color:transparent;box-shadow:0 3px 12px rgba(34,197,94,.35)}
+.st-btn.on-a{background:linear-gradient(135deg,#ef4444,#b91c1c);color:#fff;border-color:transparent;box-shadow:0 3px 12px rgba(239,68,68,.35)}
+.st-btn.on-l{background:linear-gradient(135deg,#f59e0b,#b45309);color:#fff;border-color:transparent;box-shadow:0 3px 12px rgba(245,158,11,.35)}
+.mini-in{width:78px;padding:8px;border-radius:10px;text-align:center;font-size:13px;font-family:inherit;
+  background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);color:#fbbf24;outline:none}
+.book-btn{padding:8px 12px;border-radius:10px;border:1px solid var(--border-soft);background:rgba(255,255,255,.05);color:var(--muted);font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:.2s}
+.book-btn.on-b{background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;border-color:transparent}
+.book-btn.on-n{background:linear-gradient(135deg,#a855f7,#7e22ce);color:#fff;border-color:transparent}
+.note-in{flex:1;min-width:150px;padding:8px 12px;border-radius:10px;font-size:13px;font-family:inherit;
+  background:rgba(255,255,255,.06);border:1px solid var(--border-soft);color:var(--text);outline:none}
+.note-in:focus{border-color:var(--gold)}
+
+/* إحصائيات سريعة */
+.quick-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px}
+.qs{padding:14px;text-align:center;border-radius:15px}
+.qs .n{font-size:23px;font-weight:900}
+.qs .l{font-size:11.5px;color:var(--muted);margin-top:3px}
+.qs.g .n{color:var(--green)} .qs.r .n{color:var(--red)} .qs.o .n{color:var(--orange)} .qs.b .n{color:var(--blue)}
+
+/* الجداول */
+.tbl-wrap{overflow-x:auto;border-radius:16px}
+table{width:100%;border-collapse:collapse;min-width:640px}
+th,td{padding:11px 12px;text-align:start;border-bottom:1px solid var(--border-soft);font-size:13.5px;white-space:nowrap}
+th{color:var(--gold-2);font-size:12px;background:rgba(212,175,55,.08);font-weight:800}
+tbody tr:hover{background:rgba(255,255,255,.04)}
+.grade-in{width:62px;padding:7px;border-radius:9px;text-align:center;font-family:inherit;font-weight:700;
+  background:rgba(255,255,255,.07);border:1px solid var(--border-soft);color:var(--text);outline:none}
+.grade-in:focus{border-color:var(--gold)}
+.p-high{color:var(--green);font-weight:900}.p-mid{color:var(--gold-2);font-weight:900}
+.p-low{color:var(--orange);font-weight:900}.p-fail{color:var(--red);font-weight:900}
+
+/* بطاقة التقرير */
+.rep-card{padding:18px;margin-bottom:14px}
+.rep-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.rep-chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:13px}
+.rep-actions{display:flex;flex-wrap:wrap;gap:8px}
+.scores-line{font-size:12.5px;color:var(--muted);background:rgba(255,255,255,.05);border-radius:10px;padding:9px 12px;margin-bottom:13px;line-height:1.8}
+
+/* الإعدادات */
+.set-card{padding:18px;margin-bottom:16px}
+.set-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:11px 0;border-bottom:1px dashed var(--border-soft)}
+.set-row:last-child{border-bottom:none}
+.days-badges{display:flex;flex-wrap:wrap;gap:5px}
+.day-badge{font-size:11px;padding:3px 10px;border-radius:99px;background:rgba(56,189,248,.13);color:var(--blue);border:1px solid rgba(56,189,248,.3);font-weight:700}
+.day-chk{display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:10px;border:1px solid var(--border-soft);background:rgba(255,255,255,.05);cursor:pointer;font-size:13px;font-weight:700;transition:.2s}
+.day-chk input{accent-color:var(--gold);width:16px;height:16px}
+.day-chk.on{border-color:var(--gold);background:rgba(212,175,55,.15);color:var(--gold-2)}
+
+/* النافذة المنبثقة */
+.modal-overlay{position:fixed;inset:0;background:rgba(5,10,20,.75);backdrop-filter:blur(5px);display:none;align-items:center;justify-content:center;z-index:200;padding:16px}
+.modal-overlay.active{display:flex}
+.modal{background:linear-gradient(160deg,#16233a,#101a2c);border:1px solid var(--border);border-radius:20px;width:100%;max-width:460px;padding:26px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.modal h3{color:var(--gold-2);margin-bottom:14px;font-size:17px}
+.modal-actions{display:flex;gap:10px;margin-top:20px}
+.modal-actions .btn{flex:1}
+
+/* Toast */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);z-index:300;
+  background:linear-gradient(135deg,#1d2b45,#152238);border:1px solid var(--gold);color:var(--gold-2);
+  padding:13px 24px;border-radius:99px;font-size:13.5px;font-weight:700;box-shadow:0 10px 30px rgba(0,0,0,.5);transition:.35s;opacity:0;max-width:92vw;text-align:center}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+.empty{text-align:center;padding:45px 20px;color:var(--muted)}
+.empty .e-icon{font-size:46px;margin-bottom:12px;opacity:.6}
+.notice-amber{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);color:#fbbf24;padding:11px 15px;border-radius:12px;font-size:13px;font-weight:700;margin-bottom:14px}
+
+@media(max-width:560px){
+  .topbar-in{padding:10px 12px}
+  .brand span.t{display:none}
+  .page{padding:14px 12px 90px}
+  .stu-card{padding:13px}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ 1) شاشة الدخول ============ -->
+<div id="loginScreen">
+  <div class="login-card glass">
+    <div class="login-logo">📖</div>
+    <h1 data-i18n="appTitle">የተማሪዎች ክትትል</h1>
+    <div class="sub" data-i18n="tagline">የትምህርት ክትትል መተግበሪያ</div>
+    <label class="lbl" data-i18n="username">የተጠቃሚ ስም</label>
+    <input class="field" id="loginUser" autocomplete="off">
+    <label class="lbl" data-i18n="password">የይለፍ ቃል</label>
+    <input class="field" id="loginPass" type="password">
+    <div style="display:flex;gap:10px;margin-top:18px">
+      <button class="btn btn-gold" style="flex:1" onclick="doLogin()" data-i18n="loginBtn">ግባ</button>
+      <select class="field" id="loginLang" style="max-width:130px" onchange="switchLang(this.value)">
+        <option value="am">አማርኛ</option><option value="ar">العربية</option><option value="en">English</option>
+      </select>
+    </div>
+    <div class="hint" data-i18n="loginHint">የመምህር ነባር መግቢያ፦ admin / 1234</div>
+  </div>
+</div>
+
+<!-- ============ 2) التطبيق ============ -->
+<div id="appScreen" class="hidden">
+
+  <header class="topbar">
+    <div class="topbar-in">
+      <div class="brand"><div class="logo">📖</div><span class="t" data-i18n="appTitle">የተማሪዎች ክትትል</span></div>
+      <div class="topbar-controls">
+        <span class="role-badge role-teacher" id="roleBadge">መምህር</span>
+        <select class="field" id="readingSelect" onchange="switchReading(this.value)"></select>
+        <select class="field" id="langSelect" onchange="switchLang(this.value)">
+          <option value="am">አማርኛ</option><option value="ar">العربية</option><option value="en">English</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" id="installBtn" onclick="installApp()" style="display:none">⬇️ <span data-i18n="installBtn">መተግበሪያ ጫን</span></button>
+        <button class="btn btn-danger btn-sm" onclick="doLogout()" data-i18n="logout">ውጣ</button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-btn active" data-page="daily" onclick="showPage('daily')" data-i18n="tabDaily">ዕለታዊ ክትትል</button>
+    <button class="tab-btn" data-page="grades" onclick="showPage('grades')" data-i18n="tabGrades">የፈተና ነጥቦች</button>
+    <button class="tab-btn" data-page="reports" onclick="showPage('reports')" data-i18n="tabReports">ሳምንታዊ ሪፖርት</button>
+    <button class="tab-btn" data-page="settings" onclick="showPage('settings')" data-i18n="tabSettings">ማስተካከያዎች</button>
+  </nav>
+
+  <!-- ======= صفحة المتابعة اليومية ======= -->
+  <section class="page" id="page-daily">
+    <div class="page-head">
+      <h2 data-i18n="tabDaily">ዕለታዊ ክትትል</h2>
+      <div class="spacer"></div>
+      <input type="date" class="field" id="dailyDate" style="max-width:175px" onchange="renderDaily()">
+      <input class="field" id="dailySearch" style="max-width:200px" data-i18n-ph="searchPh" oninput="renderDaily()">
+      <button class="btn btn-gold btn-sm" id="addStudentBtn" onclick="openStudentModal()">＋ <span data-i18n="addStudent">ተማሪ ጨምር</span></button>
+    </div>
+    <div id="studyDayNote"></div>
+    <div class="quick-stats" id="dailyStats"></div>
+    <div id="dailyList"></div>
+  </section>
+
+  <!-- ======= صفحة الدرجات ======= -->
+  <section class="page hidden" id="page-grades">
+    <div class="page-head">
+      <h2 data-i18n="tabGrades">የፈተና ነጥቦች</h2>
+      <div class="spacer"></div>
+      <button class="btn btn-gold btn-sm" onclick="openExamModal()">＋ <span data-i18n="addExam">ፈተና ጨምር</span></button>
+    </div>
+    <div id="gradesWrap"></div>
+  </section>
+
+  <!-- ======= صفحة التقارير ======= -->
+  <section class="page hidden" id="page-reports">
+    <div class="page-head">
+      <h2 data-i18n="tabReports">ሳምንታዊ ሪፖርት</h2>
+    </div>
+    <div class="notice-amber" data-i18n="reportTitle">የሳምንቱ ማጠቃለያ (ያለፉት 7 ቀናት)</div>
+    <div id="reportsList"></div>
+  </section>
+
+  <!-- ======= صفحة الإعدادات ======= -->
+  <section class="page hidden" id="page-settings">
+    <div class="page-head"><h2 data-i18n="tabSettings">ማስተካከያዎች</h2></div>
+    <div id="settingsWrap"></div>
+  </section>
+
+</div>
+
+<!-- ============ النوافذ المنبثقة ============ -->
+<div class="modal-overlay" id="modalRoot">
+  <div class="modal">
+    <h3 id="modalTitle"></h3>
+    <div id="modalBody"></div>
+    <div class="modal-actions">
+      <button class="btn btn-gold" onclick="modalSave()" data-i18n="save">አስቀምጥ</button>
+      <button class="btn btn-ghost" onclick="closeModal()" data-i18n="cancel">ተወው</button>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+/* ============================================================
+   ① الترجمات — አማርኛ / العربية / English
+   ============================================================ */
+const I18N = {
+am:{
+ appTitle:"የተማሪዎች ክትትል", tagline:"የትምህርት ክትትል መተግበሪያ", welcome:"እንኳን ደህና መጡ",
+ username:"የተጠቃሚ ስም", password:"የይለፍ ቃል", loginBtn:"ግባ",
+ loginHint:"የመምህር ነባር መግቢያ፦ admin / 1234", wrongLogin:"የተጠቃሚ ስም ወይም የይለፍ ቃል ስህተት ነው!",
+ tabDaily:"ዕለታዊ ክትትል", tabGrades:"የፈተና ነጥቦች", tabReports:"ሳምንታዊ ሪፖርት", tabSettings:"ማስተካከያዎች",
+ logout:"ውጣ", installBtn:"መተግበሪያ ጫን", reading:"ንባብ",
+ noReadings:"እስካሁን ንባብ አልተጨመረም። አዲስ ንባብ ይጨምሩ።", addReading:"አዲስ ንባብ ጨምር", editReading:"ንባብ አርትሥ",
+ readingName:"የንባብ ስም", studyDays:"የትምህርት ቀናት (ቢያንስ አንድ ቀን ይምረጡ)",
+ mon:"ሰኞ",tue:"ማክሰኞ",wed:"ረቡዕ",thu:"ሐሙስ",fri:"ዓርብ",sat:"ቅዳሜ",sun:"እሁድ",
+ addStudent:"ተማሪ ጨምር", editStudent:"ተማሪ አርትሥ", studentName:"የተማሪ ስም", fatherName:"የአባት ስም", guardianPhone:"የወላጅ ስልክ",
+ searchPh:"ተማሪ ፈልግ...", present:"ተገኘ", absent:"አልተገኘም", late:"ዘግይቷል", minutes:"ደቂቃ",
+ hasBook:"📖 መጽሐፍ አለው", noBook:"✋ መጽሐፍ የለውም", note:"ማስታወሻ", notePh:"የዕለቱ ማስታወሻ...",
+ date:"ቀን", studentsCount:"ተማሪዎች", statPresent:"የተገኙ", statAbsent:"ያልተገኙ", statLate:"የዘገዩ",
+ noStudents:"በዚህ ንባብ ተማሪ የለም። ተማሪ ይጨምሩ።",
+ notStudyDay:"⚠️ ይህ ቀን ከትምህርት ቀናት ውስጥ አይካተትም!",
+ addExam:"ፈተና ጨምር", examName:"የፈተና ስም", maxScore:"ከፍተኛ ነጥብ", total:"ጠቅላላ", percent:"መቶኛ", noExams:"እስካሁን ፈተና አልተጨመረም። ፈተና ይጨምሩ።",
+ reportTitle:"📊 የሳምንቱ ማጠቃለያ — ያለፉት 7 ቀናት",
+ presentDays:"የተገኘባቸው ቀናት", absences:"የመቅረት ብዛት", lateMin:"የዘገያ ደቂቃ", bookMissed:"መጽሐፍ ያልመጣበት ጊዜ", scoresLabel:"የፈተና ውጤት",
+ telegram:"📨 ቴሌግራም", sms:"✉️ ኤስኤምኤስ", share:"📤 መጋራት", noPhone:"ስልክ ቁጥር አልተመዘገበም",
+ msgCopied:"መልእክቱ ተቀድቷል! በቴሌግራም ላይ ለስልኩ Ctrl+V በመጫን ይለጥፉ።",
+ assistants:"አጋዞች (የተገደቡ መለያዎች)", addAssistant:"አጋዝ ጨምር", asstName:"የአጋዙ ስም", asstUser:"የተጠቃሚ ስም", asstPass:"የይለፍ ቃል",
+ asstNote:"ℹ️ አጋዙ የሚመዘገበው ዕለታዊ ክትትል ብቻ ነው (ነጥቦች እና ሪፖርቶች
