@@ -37,7 +37,6 @@ function isStudyDay(reading, iso){
   const d = parseISO(iso);
   return reading.days.indexOf(d.getDay()) !== -1;
 }
-
 /* ═══════════════════════════════════════════════════════════════════════
    بنية قاعدة البيانات:
    {
@@ -53,7 +52,7 @@ function isStudyDay(reading, iso){
              guardianRelation:"father"|"mother", guardianPhone, createdAt }
          ],
          attendance: {                       /* المفتاح: تاريخ ISO */
-           "2026-08-25": {
+           "2026-08-25"{
              "<studentId>": {
                status: "present"|"late"|"absent",  /* null = لم يُسجَّل */
                minutes: 0,
