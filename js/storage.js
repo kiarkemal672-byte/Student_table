@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   የንባብ መዝገብ · سِجِلُّ القُرّاء · Reading Log
+   የቂራአት መዝገብ · سِجِلُّ القُرّاء · Reading Log
    js/storage.js
    ─ طبقة قاعدة البيانات المحلية (localStorage)
    ─ القراءات · الطلاب · الحضور · الاختبارات · المستخدمون · النسخ الاحتياطي
@@ -7,23 +7,23 @@
 "use strict";
 
 /* ──────────────── المفاتيح والإصدار ──────────────── */
-const DB_KEY     = "ql_db";       /* قاعدة البيانات الرئيسية */
-const SESSION_KEY = "ql_session"; /* الجلسة الحالية (معرّف المستخدم) */
+const DB_KEY     = "ql_db";       // قاعدة البيانات الرئيسية
+const SESSION_KEY = "ql_session"; // الجلسة الحالية (معرّف المستخدم)
 const DB_VERSION = 1;
 
 /* ──────────────── أدوات مساعدة ──────────────── */
 
-/* معرّف فريد قصير */
+// معرّف فريد قصير
 function uid(){
   return Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
 }
 
-/* نسخة عميقة (لعزل البيانات قبل الإرجاع عند الحاجة) */
+// نسخة عميقة (لعزل البيانات قبل الإرجاع عند الحاجة)
 function deepClone(o){
   return JSON.parse(JSON.stringify(o));
 }
 
-/* تاريخ اليوم بصيغة ISO محلي (بدون انزياح المنطقة الزمنية) */
+// تاريخ اليوم بصيغة ISO محلي (بدون انزياح المنطقة الزمنية)
 function todayISO(){
   const d = new Date();
   return d.getFullYear() + "-" +
@@ -31,32 +31,42 @@ function todayISO(){
          String(d.getDate()).padStart(2, "0");
 }
 
-/* هل هذا التاريخ من أيام دراسة القراءة؟ */
+// تحويل نص تاريخ ISO إلى كائن Date
+function parseISO(iso){
+  if (iso instanceof Date) return iso;
+  const parts = String(iso).split("-");
+  if (parts.length < 3) return new Date();
+  return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+}
+
+// هل هذا التاريخ من أيام دراسة القراءة؟
 function isStudyDay(reading, iso){
   if (!reading || !reading.days || !reading.days.length) return false;
   const d = parseISO(iso);
   return reading.days.indexOf(d.getDay()) !== -1;
 }
+
 /* ═══════════════════════════════════════════════════════════════════════
    بنية قاعدة البيانات:
    {
      version: 1,
      users: [
-       { id, name, username, password, role: "teacher"|"assistant", createdAt }
+       { id, name, username, password, role, createdAt }
      ],
      readings: [
        {
-         id, name, days:[0..6], createdAt,
+         id, name, days, createdAt,
          students: [
            { id, name, father, guardianName,
-             guardianRelation:"father"|"mother", guardianPhone, createdAt }
+             guardianRelation, guardianPhone, createdAt }
          ],
-         attendance: {                       /* المفتاح: تاريخ ISO */
-           "2026-08-25"{
+         attendance: {
+           // المفتاح: تاريخ ISO
+           "2026-08-25": {
              "<studentId>": {
-               status: "present"|"late"|"absent",  /* null = لم يُسجَّل */
+               status: "present" | "late" | "absent",  // null = لم يُسجَّل
                minutes: 0,
-               book: true|false|null,
+               book: true | false | null,
                note: ""
              }
            }
@@ -97,15 +107,15 @@ const Store = {
     }
   },
 
-  /* التهيئة الأولى: بيانات نظامية فارغة + حساب الأستاذ الافتراضي */
+  // التهيئة الأولى: بيانات نظامية فارغة + حساب الأستاذ الافتراضي
   init(){
     const existing = this.load();
     if (existing){
       this.db = existing;
-      /* ترقيات مستقبلية حسب الإصدار */
+      // ترقيات مستقبلية حسب الإصدار
       if (!this.db.settings) this.db.settings = { currentReadingId: null };
       this.ensureIntegrity();
-      return false; /* ليس أول تشغيل */
+      return false; // ليس أول تشغيل
     }
 
     this.db = {
@@ -122,10 +132,10 @@ const Store = {
       settings: { currentReadingId: null }
     };
     this.save();
-    return true; /* أول تشغيل */
+    return true; // أول تشغيل
   },
 
-  /* إصلاح أي نقص في البنية (وقاية من ملفات قديمة/تالفة) */
+  // إصلاح أي نقص في البنية (وقاية من ملفات قديمة/تالفة)
   ensureIntegrity(){
     const db = this.db;
     if (!Array.isArray(db.users))      db.users = [];
@@ -140,7 +150,7 @@ const Store = {
       r.tests.forEach(ts => { if (!ts.scores) ts.scores = {}; });
     });
 
-    /* ضمان وجود حساب أستاذ واحد على الأقل */
+    // ضمان وجود حساب أستاذ واحد على الأقل
     if (!db.users.some(u => u.role === "teacher")){
       db.users.push({
         id: uid(),
@@ -204,7 +214,7 @@ const Store = {
     return true;
   },
 
-  /* القراءة الحالية */
+  // القراءة الحالية
   getCurrentReading(){
     return this.getReading(this.db.settings.currentReadingId);
   },
@@ -226,7 +236,7 @@ const Store = {
     return r ? r.students.find(s => s.id === studentId) || null : null;
   },
 
-  /* البحث عن تكرار الاسم + اسم الأب في نفس القراءة */
+  // البحث عن تكرار الاسم + اسم الأب في نفس القراءة
   studentExists(readingId, name, father, exceptId){
     const r = this.getReading(readingId);
     if (!r) return false;
@@ -278,12 +288,12 @@ const Store = {
     if (i === -1) return false;
     r.students.splice(i, 1);
 
-    /* تنظيف سجلّه من الحضور */
+    // تنظيف سجلّه من الحضور
     Object.keys(r.attendance).forEach(dateISO => {
       delete r.attendance[dateISO][studentId];
     });
 
-    /* تنظيف درجاته من الاختبارات */
+    // تنظيف درجاته من الاختبارات
     r.tests.forEach(ts => { delete ts.scores[studentId]; });
 
     this.save();
@@ -292,14 +302,14 @@ const Store = {
 
   /* ─────────── الحضور اليومي ─────────── */
 
-  /* سجل يوم كامل: { studentId: {...} } */
+  // سجل يوم كامل: { studentId: {...} }
   getDayAttendance(readingId, dateISO){
     const r = this.getReading(readingId);
     if (!r || !r.attendance[dateISO]) return {};
     return r.attendance[dateISO];
   },
 
-  /* تعديل جزئي لطالب في يوم معيّن (حفظ فوري تلقائي) */
+  // تعديل جزئي لطالب في يوم معيّن (حفظ فوري تلقائي)
   setStudentDay(readingId, dateISO, studentId, patch){
     const r = this.getReading(readingId);
     if (!r) return null;
@@ -317,7 +327,7 @@ const Store = {
     return rec;
   },
 
-  /* سجل نطاق تواريخ (للتقارير): { dateISO: { studentId: {...} } } */
+  // سجل نطاق تواريخ (للتقارير): { dateISO: { studentId: {...} } }
   getAttendanceRange(readingId, startISO, endISO){
     const r = this.getReading(readingId);
     const out = {};
@@ -336,7 +346,7 @@ const Store = {
   getTests(readingId){
     const r = this.getReading(readingId);
     if (!r) return [];
-    /* مرتّبة بالتاريخ ثم وقت الإنشاء */
+    // مرتّبة بالتاريخ ثم وقت الإنشاء
     return r.tests.slice().sort((a, b) =>
       a.date === b.date ? (a.id < b.id ? -1 : 1) : (a.date < b.date ? -1 : 1)
     );
@@ -367,7 +377,7 @@ const Store = {
     if (data.max   !== undefined){
       const newMax = Math.max(1, Number(data.max) || 10);
       ts.max = newMax;
-      /* إسقاط الدرجات التي تتجاوز الحد الجديد */
+      // إسقاط الدرجات التي تتجاوز الحد الجديد
       Object.keys(ts.scores).forEach(sid => {
         if (ts.scores[sid] > newMax) ts.scores[sid] = newMax;
       });
@@ -386,7 +396,7 @@ const Store = {
     return true;
   },
 
-  /* رصد درجة طالب في اختبار (value = null للحذف) */
+  // رصد درجة طالب في اختبار (value = null للحذف)
   setScore(readingId, testId, studentId, value){
     const r = this.getReading(readingId);
     if (!r) return false;
@@ -413,7 +423,7 @@ const Store = {
     return this.db.users.find(x => x.username.toLowerCase() === u) || null;
   },
 
-  /* التحقق من بيانات الدخول */
+  // التحقق من بيانات الدخول
   authenticate(username, password){
     const u = this.findUserByUsername(username);
     if (u && u.password === password) return u;
@@ -421,7 +431,7 @@ const Store = {
   },
 
   addUser(data){
-    /* اسم المستخدم فريد إلزامياً */
+    // اسم المستخدم فريد إلزامياً
     if (this.findUserByUsername(data.username)) return null;
     const user = {
       id: uid(),
@@ -437,7 +447,7 @@ const Store = {
   },
 
   deleteUser(userId){
-    /* لا يمكن حذف آخر حساب أستاذ */
+    // لا يمكن حذف آخر حساب أستاذ
     const user = this.db.users.find(u => u.id === userId);
     if (!user || user.role === "teacher") return false;
     const i = this.db.users.findIndex(u => u.id === userId);
@@ -505,7 +515,7 @@ const Store = {
     const r = this.getReading(readingId);
     if (!r) return null;
 
-    /* أيام الأسبوع السبعة (من السبت) */
+    // أيام الأسبوع السبعة (من السبت)
     const days = [];
     const start = parseISO(weekStartISO);
     for (let i = 0; i < 7; i++){
@@ -517,13 +527,13 @@ const Store = {
     }
     const endISO = days[6];
 
-    /* سجل الحضور خلال الأسبوع */
+    // سجل الحضور خلال الأسبوع
     const range = this.getAttendanceRange(readingId, weekStartISO, endISO);
 
-    /* أيام الدراسة الفعلية داخل الأسبوع */
+    // أيام الدراسة الفعلية داخل الأسبوع
     const studyDays = days.filter(iso => isStudyDay(r, iso));
 
-    /* اختبارات الأسبوع */
+    // اختبارات الأسبوع
     const weekTests = this.getTests(readingId).filter(ts =>
       ts.date >= weekStartISO && ts.date <= endISO
     );
@@ -576,7 +586,7 @@ const Store = {
 (function initStorage(){
   Store.init();
 
-  /* لو فُتح التطبيق في نافذة أخرى وعدَّل البيانات: تحديث تلقائي هنا */
+  // لو فُتح التطبيق في نافذة أخرى وعدَّل البيانات: تحديث تلقائي هنا
   window.addEventListener("storage", e => {
     if (e.key === DB_KEY && e.newValue){
       try {
