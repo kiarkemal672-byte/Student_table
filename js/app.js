@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   የንባብ መዝገብ · سِجِلُّ القُرّاء · Reading Log
+   የቂራአት መከታተያ . سِجِلُّ القُرّاءة · Reading Log
    js/app.js
    ─ منطق التطبيق الكامل:
      الدخول والصلاحيات · القراءات · الطلاب · الحضور اليومي
@@ -108,7 +108,7 @@ function renderLoginHints(){
 function showLogin(){
   Store.logout();
   CURRENT_USER = null;
-  document.body.classList.remove("role-assistant");
+  document.body.classList.remove("role:     "teacher");
   $("#appScreen").hidden = true;
   $("#loginScreen").hidden = false;
   $("#loginPassword").value = "";
