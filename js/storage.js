@@ -123,9 +123,9 @@ const Store = {
       users: [{
         id: uid(),
         name: (typeof t === "function") ? t("role.teacher") : "Teacher",
-        username: "teacher",
+        username: "kiar",
         password: "1234",
-        role: "teacher",
+        role: "kiar",
         createdAt: todayISO()
       }],
       readings: [],
@@ -155,9 +155,9 @@ const Store = {
       db.users.push({
         id: uid(),
         name: (typeof t === "function") ? t("role.teacher") : "Teacher",
-        username: "teacher",
+        username: "kiar",
         password: "1234",
-        role: "teacher",
+        role: "kiar",
         createdAt: todayISO()
       });
     }
@@ -570,11 +570,16 @@ const Store = {
         if (val !== null){ sum += val; maxSum += ts.max; }
         else { maxSum += ts.max; }
       });
-      stat.gradeSum = sum;
+         stat.gradeSum = sum;
       stat.gradeMax = maxSum;
       stat.gradePct = maxSum > 0 ? Math.round((sum / maxSum) * 100) : null;
 
-      return stat;
+      /* معلومات الأسبوع مرفقة لكل طالب (تحتاجها التقارير ورسائل الأولياء) */
+      stat.weekStart = weekStartISO;
+      stat.weekEnd   = endISO;
+      stat.studyDays = studyDays;
+
+      return stat;    
     });
 
     return { weekStart: weekStartISO, weekEnd: endISO, days, studyDays, weekTests, students };
